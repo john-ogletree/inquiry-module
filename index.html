@@ -50,7 +50,7 @@
       margin-bottom: 0.375rem;
     }
 
-    input[type="text"], input[type="email"], select, textarea {
+    input[type="text"], input[type="email"], textarea {
       width: 100%;
       padding: 0.75rem;
       background-color: var(--bg);
@@ -63,8 +63,8 @@
       transition: border-color 0.2s ease;
     }
 
-    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-    textarea { resize: vertical; min-height: 120px; }
+    input:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 130px; }
     .hidden { display: none !important; }
 
     button[type="submit"] {
@@ -88,7 +88,7 @@
 
   <main class="container">
     <h1>Portfolio Inquiry</h1>
-    <p class="subtitle">Looking for a custom project, graphic asset, or design style from one of my repositories? Get in touch below.</p>
+    <p class="subtitle">Looking for a custom web project, component build, or graphic asset? Send details below.</p>
 
     <form id="form">
       <input type="checkbox" name="botcheck" class="hidden" style="display:none">
@@ -104,35 +104,8 @@
       </div>
 
       <div class="form-group">
-        <label for="inquiry-type">Inquiry Type</label>
-        <select id="inquiry-type" name="inquiry_type">
-          <option value="">-- Select Inquiry Type --</option>
-          <option value="custom-project">New Build / Graphic Design</option>
-          <option value="style-request">Request Style/Asset From Repository</option>
-          <option value="general">General Question</option>
-        </select>
-      </div>
-
-      <div class="form-group hidden" id="build-type-group">
-        <label for="build-type">How would you like to start?</label>
-        <select id="build-type" name="build_approach">
-          <option value="">-- Select Approach --</option>
-          <option value="from-scratch">Completely From Scratch</option>
-          <option value="from-asset">Based on an Existing Repository Asset</option>
-        </select>
-      </div>
-
-      <!-- Clean Title Dropdown Selector -->
-      <div class="form-group hidden" id="repo-group">
-        <label for="repo-select">Select Reference Graphic Asset</label>
-        <select id="repo-select" name="reference_graphic_url">
-          <option value="">Loading repository assets...</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="message">Project & Style Details</label>
-        <textarea id="message" name="message" placeholder="Describe the style, layout, or graphic requirements you're looking for..." required></textarea>
+        <label for="message">Project Details</label>
+        <textarea id="message" name="message" placeholder="Describe what you're looking to build or reference any repository/design from my GitHub..." required></textarea>
       </div>
 
       <button type="submit">Send Inquiry</button>
@@ -142,94 +115,7 @@
   <script>
     const form = document.getElementById('form');
     const submitBtn = form.querySelector('button[type="submit"]');
-    const inquiryType = document.getElementById('inquiry-type');
-    const buildTypeGroup = document.getElementById('build-type-group');
-    const buildType = document.getElementById('build-type');
-    const repoGroup = document.getElementById('repo-group');
-    const repoSelect = document.getElementById('repo-select');
 
-    function resetProgressiveFields() {
-      buildTypeGroup.classList.add('hidden');
-      repoGroup.classList.add('hidden');
-      buildType.value = "";
-      repoSelect.value = "";
-    }
-
-    inquiryType.addEventListener('change', (e) => {
-      const val = e.target.value;
-      resetProgressiveFields();
-
-      if (val === 'custom-project') {
-        buildTypeGroup.classList.remove('hidden');
-      } else if (val === 'style-request') {
-        repoGroup.classList.remove('hidden');
-      }
-    });
-
-    buildType.addEventListener('change', (e) => {
-      const val = e.target.value;
-      if (val === 'from-asset') {
-        repoGroup.classList.remove('hidden');
-      } else {
-        repoGroup.classList.add('hidden');
-        repoSelect.value = "";
-      }
-    });
-
-    // Helper function to format filenames/repo names into clean readable titles
-    function formatTitle(filename) {
-      return filename
-        .replace(/\.[^/.]+$/, "") // Remove file extension
-        .replace(/[-_]/g, " ")     // Replace dashes and underscores with spaces
-        .replace(/\s+/g, " ")      // Collapse double spaces
-        .trim();
-    }
-
-    async function fetchAllRepos() {
-      const allowedExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif'];
-
-      try {
-        const res = await fetch('https://api.github.com/users/john-ogletree/repos?per_page=100&sort=updated');
-        if (!res.ok) throw new Error('API Rate Limit');
-
-        const repos = await res.json();
-        const validRepos = repos.filter(r => !r.fork);
-
-        repoSelect.innerHTML = '<option value="">-- Select a Graphic Asset --</option>';
-
-        for (const repo of validRepos) {
-          try {
-            const treeRes = await fetch(`https://api.github.com/repos/john-ogletree/${repo.name}/git/trees/${repo.default_branch}?recursive=1`);
-            if (!treeRes.ok) continue;
-
-            const treeData = await treeRes.json();
-            if (!treeData.tree) continue;
-
-            treeData.tree.forEach(file => {
-              if (file.type === 'blob' && allowedExtensions.some(ext => file.path.toLowerCase().endsWith(ext))) {
-                const rawFileName = file.path.split('/').pop();
-                const cleanTitle = formatTitle(rawFileName);
-
-                const option = document.createElement('option');
-                option.value = `https://raw.githubusercontent.com/john-ogletree/${repo.name}/${repo.default_branch}/${file.path}`;
-                option.textContent = cleanTitle;
-                repoSelect.appendChild(option);
-              }
-            });
-          } catch (err) {
-            console.warn(`Skipped ${repo.name}`);
-          }
-        }
-
-      } catch (error) {
-        console.warn('API Error:', error);
-        repoSelect.innerHTML = '<option value="">-- Unable to load assets --</option>';
-      }
-    }
-
-    fetchAllRepos();
-
-    // Form submission handler
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -251,7 +137,6 @@
         if (response.ok) {
           alert("Success! Your inquiry has been sent.");
           form.reset();
-          resetProgressiveFields();
         } else {
           alert("Error sending inquiry.");
         }
